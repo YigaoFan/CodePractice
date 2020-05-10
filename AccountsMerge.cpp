@@ -1,88 +1,123 @@
 // https : //leetcode-cn.com/problems/accounts-merge/submissions/
+class Dimension
+{
+private:
+    vector<int> _data; // Item: 1 means exist, 0 means not exist
+public:
+    Dimension(size_t size) : _data(size, 0)
+    { }
+
+    void setExistAt(size_t i)
+    {
+        if (i < _data.size())
+        {
+            _data[i] = 1;
+        }
+        else
+        {
+            _data.push_back(0);
+            setExistAt(i);
+        }
+    }
+
+    int operator[] (int index) const
+    {
+        if (index < _data.size())
+        {
+            return _data[index];
+        }
+
+        return 0;
+    }
+
+    auto size() { reutrn _data.size(); }
+};
+
 class Solution
 {
 public:
-    vector<vector<string>> accountsMerge(vector<vector<string>> &accounts)
+    vector<vector<string>> accountsMerge(vector<vector<string>>& accounts)
     {
-        // 这种方法合并的时候有点问题，可能还是要换用类似二维数组那种方法
-        vector<vector<int>> twoDim;
-        map<int, vector<string>> idAccountMap;
-        auto id = 0;
-        for (auto &a : accounts)
+        vector<string> allMailAddr;
+        vector<pair<string, Dimension>> statisticTable;
+
+        // Statistic
+        for (auto& a : accounts)
         {
-            if (!tryAppendIfHasSameMails(a, idAccountMap))
+            auto dim = Dimension(allMailAddr.size());
+
+            for (auto i = 1; i < a.size(); ++i)
             {
-                auto p = idAccountMap.insert({id++, {a[0]}});
-                combineTwoAccount(&p.first->second, a);
-            }
-        }
-
-        vector<vector<string>> combinedAccounts;
-        for (auto &p : idAccountMap)
-        {
-            auto &a = p.second;
-            sort(++a.begin(), a.end());
-            combinedAccounts.push_back(a);
-        }
-
-        return combinedAccounts;
-    }
-
-    bool tryAppendIfHasSameMails(vector<string> &account, map<int, vector<string>> &idAccountMap)
-    {
-        for (auto i = 1; i < account.size(); ++i)
-        {
-            auto &mail = account[i];
-            if (auto pos = findSameMail(mail, idAccountMap))
-            {
-                combineTwoAccount(pos.value(), account);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    optional<vector<string> *> findSameMail(string const &mail, map<int, vector<string>> &idAccountMap)
-    {
-        for (auto &item : idAccountMap)
-        {
-            auto &accounts = item.second;
-            for (auto i = 1; i < accounts.size(); ++i)
-            {
-                auto &m = accounts[i];
-                if (m == mail)
+                auto& addr = a[i];
+                if (auto pos = findIn(allMailAddr, addr))
                 {
-                    return &accounts;
+                    dim.setExistAt(pos.value());
                 }
+                else
+                {
+                    allMailAddr.push_back(addr);
+                    dim.setExistAt(allMailAddr.size() - 1);
+                }
+            }
+
+            statisticTable.push_back({ a[0], move(dim) });
+        }
+
+        return mergetIn(move(statisticTable), move(allMailAddr));
+    }
+
+    optional<int> findIn(vector<string> const& addrList, string const& addr)
+    {
+        for (auto i = 0; i < addrList.size(); ++i)
+        {
+            auto& a = addrList[i];
+            if (addr == a)
+            {
+                return i;
             }
         }
 
         return {};
     }
 
-    void combineTwoAccount(vector<string> *pos, vector<string> &account)
+    vector<vector<string>> mergetIn(vector<pair<string, Dimension>> statisticTable, vector<string> allMailAddr)
     {
-        auto has = [pos = pos](auto &a) {
-            for (auto j = 1; j < pos->size(); ++j)
-            {
-                auto &existedAccount = (*pos)[j];
-                if (existedAccount == a)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        for (auto i = 1; i < account.size(); ++i)
+        // Find in statisticTable to merge
+        vector<vector<string>> mergedAccounts;
+        
+        auto name = statisticTable[0].first;
+        vector<string> account{ name, };
+        auto dim = statisticTable[0].second;
+        for (auto i = 0; i < dim.size(); ++i)
         {
-            auto &a = account[i];
-            if (!has(a))
+            auto exist = dim[i];
+            if (exist)
             {
-                pos->push_back(a);
+                auto& addr = allMailAddr[i];
+                account.push_back(addr);
+                auto dimIdxs = searchOtherDimUse(statisticTable, i, name);
+                // TODO
+                account.push_back();
             }
         }
+    }
+
+    vector<int> searchOtherDimUse(vector<pair<string, Dimension>> statisticTable, int existIndex, string const& name)
+    {
+        vector<int> commonUseDimIdxs;
+
+        for (auto i = 0; i < statisticTable.size(); ++i)
+        {
+            auto item = statisticTable[i];
+            if (item.first == name)
+            {
+                if (item.second[existIndex] == 1)
+                {
+                    commonUseDimIdxs.push_back(i);
+                }
+            }
+        }
+
+        return commonUseDimIdxs;
     }
 };
