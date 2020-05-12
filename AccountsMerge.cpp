@@ -35,7 +35,7 @@ public:
         return _data;
     }
 
-    auto size() { reutrn _data.size(); }
+    auto size() { return _data.size(); }
 };
 
 class AddrQuery
@@ -50,7 +50,7 @@ public:
 
     vector<string> queryAddrsThenSort(vector<int> indexs)
     {
-        vector<int> buckets(indexs.size(), 0);
+        vector<int> buckets(_sortedIndexedAddrs.size(), 0);
 
         for (auto i : indexs)
         {
@@ -63,7 +63,7 @@ public:
             auto b = buckets[j];
             if (b == 1)
             {
-                addrs.push_back(_sortedIndexedAddrs[j]);
+                addrs.push_back(_sortedIndexedAddrs[j].second);
             }
         }
 
@@ -85,7 +85,7 @@ private:
 
     static vector<pair<int, string>> sort(vector<pair<int, string>> indexedAddr)
     {
-        sort(indexedAddr.begin(), indexedAddr.end(), [](auto& a, auto& b)
+        std::sort(indexedAddr.begin(), indexedAddr.end(), [](auto& a, auto& b)
         {
             return a.second < b.second;
         });
@@ -160,10 +160,10 @@ public:
         return {};
     }
 
-    vector<vector<string>> mergetIn(vector<pair<string, Dimension>> statisticTable, vector<string> addrs)
+    vector<vector<string>> mergetIn(vector<pair<string, Dimension>> statisticTable, vector<string> allAddrs)
     {
         vector<vector<string>> mergedAccounts;
-        auto query = AddrQuery(move(addrs));
+        auto query = AddrQuery(move(allAddrs));
 
         while (!statisticTable.empty())
         {
@@ -172,7 +172,7 @@ public:
             // remove duplicate
             sort(idxs.begin(), idxs.end());
             auto last = unique(idxs.begin(), idxs.end());
-            idxs.earse(last, idxs.end());
+            idxs.erase(last, idxs.end());
 
             account.reserve(idxs.size());
 
@@ -187,7 +187,7 @@ public:
     }
 
     // catch related addr idxs and delete corresponding item in statisticTable
-    vector<string> catchAllRelatedAddrIdx(vector<pair<string, Dimension>>& statisticTable, int accountIndex)
+    vector<int> catchAllRelatedAddrIdx(vector<pair<string, Dimension>>& statisticTable, int accountIndex)
     {
         vector<int> addrs;
         
@@ -236,5 +236,6 @@ public:
 
                 return commonUseIdxs;          
             }
+        }
     }
 };
