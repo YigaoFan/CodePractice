@@ -6,7 +6,8 @@ private:
     vector<int> _data; // Item: 1 means exist, 0 means not exist
 public:
     Dimension(size_t size) : _data(size, 0)
-    { }
+    {
+    }
 
     void setExistAt(size_t i)
     {
@@ -21,7 +22,7 @@ public:
         }
     }
 
-    int operator[] (int accountIndex) const
+    int operator[](int accountIndex) const
     {
         if (accountIndex < _data.size())
         {
@@ -42,129 +43,103 @@ public:
 class AddrQuery
 {
 private:
-    vector<pair<int, string>> _sortedIndexedAddrs;
+    map<int, string> _addrMap;
 
 public:
-    AddrQuery(vector<string> addrs)
-        : _sortedIndexedAddrs(sort(packageWithIndex(move(addrs))))
-    { }
+    AddrQuery(map<string, int> addrMap)
+        : _addrMap(reverseMap(move(addrMap)))
+    {
+    }
 
     vector<string> queryAddrsThenSort(vector<int> indexs)
     {
-        vector<int> buckets(_sortedIndexedAddrs.size(), 0);
+        vector<string> addrs;
 
         for (auto i : indexs)
         {
-           buckets[find(i)] = 1;
-        }
-
-        vector<string> addrs;
-        for (auto j = 0; j < buckets.size(); ++j)
-        {
-            auto b = buckets[j];
-            if (b == 1)
+            if (auto search = _addrMap.find(i); search != _addrMap.end())
             {
-                addrs.push_back(_sortedIndexedAddrs[j].second);
+                addrs.push_back(search->second);
+            }
+            else
+            {
+                throw runtime_error("Not found");
             }
         }
 
+        std::sort(addrs.begin(), addrs.end());
         return addrs;
     }
 
 private:
-    static vector<pair<int, string>> packageWithIndex(vector<string> addrs)
+    map<int, string> reverseMap(map<string, int> originalMap)
     {
-        vector<pair<int, string>> packaged;
-
-        for (auto i = 0; i < addrs.size(); ++i)
+        map<int, string> reversedMap;
+        for (auto it = originalMap.begin(); it != originalMap.end(); ++it)
         {
-            packaged.push_back({ i, addrs[i] });
+            reversedMap[move(it->second)] = move(it->first);
         }
 
-        return packaged;
-    }
-
-    static vector<pair<int, string>> sort(vector<pair<int, string>> indexedAddr)
-    {
-        std::sort(indexedAddr.begin(), indexedAddr.end(), [](auto& a, auto& b)
-        {
-            return a.second < b.second;
-        });
-        return indexedAddr;
-    }
-
-    int find(int rawIndex)
-    {
-        for (auto i = 0; i < _sortedIndexedAddrs.size(); ++i)
-        {
-            auto& item = _sortedIndexedAddrs[i];
-            if (item.first == rawIndex)
-            {
-                return i;
-            }
-        }
-
-        throw runtime_error("Not found");
+        return reversedMap;
     }
 };
 
 class Solution
 {
 public:
-    vector<vector<string>> accountsMerge(vector<vector<string>>& accounts)
+    vector<vector<string>> accountsMerge(vector<vector<string>> &accounts)
     {
-        vector<string> addrs;
+        map<string, int> addrMap;
         vector<pair<string, Dimension>> statisticTable;
 
         // Statistic
-        for (auto& a : accounts)
+        for (auto &a : accounts)
         {
-            auto dim = Dimension(addrs.size());
+            auto dim = Dimension(addrMap.size());
 
             for (auto i = 1; i < a.size(); ++i)
             {
-                auto& addr = a[i];
-                if (auto pos = findIn(addrs, addr))
+                auto &addr = a[i];
+                if (auto pos = findIn(addrMap, addr))
                 {
                     dim.setExistAt(pos.value());
                 }
                 else
                 {
-                    addrs.push_back(addr);
-                    dim.setExistAt(addrs.size() - 1);
+                    addrMap.insert({addr, addrMap.size()});
+                    dim.setExistAt(addrMap.size() - 1);
                 }
             }
 
-            statisticTable.push_back({ a[0], move(dim) });
+            statisticTable.push_back({a[0], move(dim)});
         }
 
-        return mergetIn(move(statisticTable), move(addrs));
+        auto query = AddrQuery(move(addrMap));
+        return mergetIn(move(statisticTable), move(query));
     }
 
-    optional<int> findIn(vector<string> const& addrList, string const& addr)
+    optional<int> findIn(map<string, int> const &addrMap, string const &addr)
     {
-        for (auto i = 0; i < addrList.size(); ++i)
+        if (auto search = addrMap.find(addr); search != addrMap.end())
         {
-            auto& a = addrList[i];
-            if (addr == a)
-            {
-                return i;
-            }
+            return search->second;
         }
 
         return {};
     }
 
-    vector<vector<string>> mergetIn(vector<pair<string, Dimension>> statisticTable, vector<string> allAddrs)
+    vector<vector<string>> mergetIn(vector<pair<string, Dimension>> statisticTable, AddrQuery query)
     {
         vector<vector<string>> mergedAccounts;
-        auto query = AddrQuery(move(allAddrs));
 
         while (!statisticTable.empty())
         {
-            vector<string> account{ statisticTable[0].first, };
-            auto addrStates = statisticTable[0].second;
-            statisticTable.erase(statisticTable.begin());
+            vector<string> account{
+                move(statisticTable[0].first),
+            };
+            auto addrStates = move(statisticTable[0].second);
+            statisticTable[0] = statisticTable.back();
+            statisticTable.pop_back();
 
             auto idxs = catchAllRelatedAddrIdx(statisticTable, move(addrStates));
             // remove duplicate
@@ -176,8 +151,8 @@ public:
 
             auto addrs = query.queryAddrsThenSort(idxs);
             account.insert(account.end(),
-                make_move_iterator(addrs.begin()), 
-                make_move_iterator(addrs.end()));
+                           make_move_iterator(addrs.begin()),
+                           make_move_iterator(addrs.end()));
             mergedAccounts.push_back(move(account));
         }
 
@@ -185,7 +160,7 @@ public:
     }
 
     // catch related addr idxs and delete corresponding item in statisticTable
-    vector<int> catchAllRelatedAddrIdx(vector<pair<string, Dimension>>& statisticTable, vector<int> addrStates)
+    vector<int> catchAllRelatedAddrIdx(vector<pair<string, Dimension>> &statisticTable, vector<int> addrStates)
     {
         vector<int> allAddrs;
 
@@ -195,9 +170,10 @@ public:
             if (state == 1)
             {
                 allAddrs.push_back(i);
-                auto otherAccountsAddrs = queryData(statisticTable, i);
-                for (auto addrs : otherAccountsAddrs)
+                auto otherAccountsAddrs = queryData(statisticTable, i); // 这里的 i 可能别的子已经查过了
+                for (auto &addrs : otherAccountsAddrs)
                 {
+                    addrs[i] = 0;
                     auto relatedAddrs = catchAllRelatedAddrIdx(statisticTable, move(addrs));
                     allAddrs.insert(allAddrs.end(),
                                     make_move_iterator(relatedAddrs.begin()),
@@ -209,18 +185,18 @@ public:
         return allAddrs;
     }
 
-    vector<vector<int>> queryData(vector<pair<string, Dimension>>& statisticTable, int addrIndex, vector<vector<int>> lastQueryResult = {})
+    vector<vector<int>> queryData(vector<pair<string, Dimension>> &statisticTable, int addrIndex, vector<vector<int>> lastQueryResult = {})
     {
         for (auto i = 0; i < statisticTable.size(); ++i)
         {
-            auto item = statisticTable[i];
+            auto &item = statisticTable[i];
 
             if (item.second[addrIndex] == 1)
             {
                 lastQueryResult.push_back(move(item.second));
-                statisticTable.back() = statisticTable[i];
+                statisticTable[i] = statisticTable.back();
                 statisticTable.pop_back();
-                return queryData(statisticTable, addrIndex, lastQueryResult);
+                return queryData(statisticTable, addrIndex, move(lastQueryResult));
             }
         }
 
