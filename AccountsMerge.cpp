@@ -1,4 +1,5 @@
 // https : //leetcode-cn.com/problems/accounts-merge/submissions/
+// 看一下别人的实现代码
 class Dimension
 {
 private:
@@ -168,7 +169,9 @@ public:
         while (!statisticTable.empty())
         {
             vector<string> account{ statisticTable[0].first, };
-            auto idxs = catchAllRelatedAddrIdx(statisticTable, 0);
+            auto addrStates = statisticTable[0].second;
+            statisticTable.erase(statisticTable.begin());
+            auto idxs = catchAllRelatedAddrIdx(statisticTable, move(addrStates));
             // remove duplicate
             sort(idxs.begin(), idxs.end());
             auto last = unique(idxs.begin(), idxs.end());
@@ -187,55 +190,53 @@ public:
     }
 
     // catch related addr idxs and delete corresponding item in statisticTable
-    vector<int> catchAllRelatedAddrIdx(vector<pair<string, Dimension>>& statisticTable, int accountIndex)
+    vector<int> catchAllRelatedAddrIdx(vector<pair<string, Dimension>>& statisticTable, vector<int> addrStates)
     {
-        vector<int> addrs;
+        vector<int> allAddrs;
         
-        auto addrStates = queryData<DataKind::Mail>(statisticTable, accountIndex);
-        statisticTable.erase(statisticTable.begin() + accountIndex);
+        // auto addrStates = queryData<DataKind::Mail>(statisticTable, accountIndex);
+        // statisticTable.erase(statisticTable.begin() + accountIndex);
 
         for (auto i = 0; i < addrStates.size(); ++i)
         {
             auto state = addrStates[i];
             if (state == 1)
             {
-                auto commonUsedIdxs = queryData<DataKind::User>(statisticTable, i);
-                for (auto idx : commonUsedIdxs)
+                allAddrs.push_back(i);
+                auto otherAccountsAddrs = queryData(statisticTable, i);
+                for (auto addrs : otherAccountsAddrs)
                 {
-                    auto relatedAddrs = catchAllRelatedAddrIdx(statisticTable, idx);
-                    addrs.insert(addrs.end(), 
-                        make_move_iterator(relatedAddrs.begin()),
-                        make_move_iterator(relatedAddrs.end()));
+                    auto relatedAddrs = catchAllRelatedAddrIdx(statisticTable, move(addrs));
+                    allAddrs.insert(addrs.end(),
+                                    make_move_iterator(relatedAddrs.begin()),
+                                    make_move_iterator(relatedAddrs.end()));
                 }
             }
         }
 
-        return addrs;
+        return allAddrs;
     }
 
-    template <DataKind Kind>
-    vector<int> queryData(vector<pair<string, Dimension>> const& statisticTable, int accountIndex)
+    vector<vector<int>> queryData(vector<pair<string, Dimension>>& statisticTable, int addrIndex)
     {
-        switch (Kind)
+        vector<vector<int>> otherAccountsAddrs;
+
+        for (auto i = 0; i < statisticTable.size(); ++i)
         {
-        case DataKind::Mail:
-            return statisticTable[accountIndex].second;
+            auto item = statisticTable[i];
 
-        case DataKind::User:
+            if (item.second[addrIndex] == 1)
             {
-                vector<int> commonUseIdxs;
-
-                for (auto i = 0; i < statisticTable.size(); ++i)
-                {
-                    auto item = statisticTable[i];
-                    if (item.second[accountIndex] == 1)
-                    {
-                        commonUseIdxs.push_back(i);
-                    }
-                }
-
-                return commonUseIdxs;          
+                otherAccountsAddrs.push_back(move(item.second));
+                statisticTable.erase(statisticTable.begin() + i);
+                auto remain = queryData(statisticTable, addrIndex);
+                otherAccountsAddrs.insert(otherAccountsAddrs.end(),
+                                          make_move_iterator(remain.begin()),
+                                          make_move_iterator(remain.end()));
+                return otherAccountsAddrs;
             }
         }
+
+        return { };
     }
 };
