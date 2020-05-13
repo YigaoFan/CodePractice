@@ -170,10 +170,12 @@ public:
             if (state == 1)
             {
                 allAddrs.push_back(i);
-                auto otherAccountsAddrs = queryData(statisticTable, i); // 这里的 i 可能别的子已经查过了
+                auto otherAccountsAddrs = queryData(statisticTable, i);
                 for (auto &addrs : otherAccountsAddrs)
                 {
                     addrs[i] = 0;
+                    // 下面的 catchAllRelatedAddrIdx 里 addrs 可能包含别的 addrs 已经查过的 addr
+                    // 这样就重复查了，尽管别的 addrs 查过后，将相关的 account 已经删掉了
                     auto relatedAddrs = catchAllRelatedAddrIdx(statisticTable, move(addrs));
                     allAddrs.insert(allAddrs.end(),
                                     make_move_iterator(relatedAddrs.begin()),
