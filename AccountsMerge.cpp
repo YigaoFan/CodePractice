@@ -110,12 +110,6 @@ private:
 
 class Solution
 {
-private:
-    enum class DataKind
-    {
-        Mail,
-        User,
-    };
 public:
     vector<vector<string>> accountsMerge(vector<vector<string>>& accounts)
     {
@@ -171,13 +165,14 @@ public:
             vector<string> account{ statisticTable[0].first, };
             auto addrStates = statisticTable[0].second;
             statisticTable.erase(statisticTable.begin());
+
             auto idxs = catchAllRelatedAddrIdx(statisticTable, move(addrStates));
             // remove duplicate
             sort(idxs.begin(), idxs.end());
             auto last = unique(idxs.begin(), idxs.end());
             idxs.erase(last, idxs.end());
 
-            account.reserve(idxs.size());
+            account.reserve(idxs.size() + 1);
 
             auto addrs = query.queryAddrsThenSort(idxs);
             account.insert(account.end(),
@@ -193,9 +188,6 @@ public:
     vector<int> catchAllRelatedAddrIdx(vector<pair<string, Dimension>>& statisticTable, vector<int> addrStates)
     {
         vector<int> allAddrs;
-        
-        // auto addrStates = queryData<DataKind::Mail>(statisticTable, accountIndex);
-        // statisticTable.erase(statisticTable.begin() + accountIndex);
 
         for (auto i = 0; i < addrStates.size(); ++i)
         {
@@ -207,7 +199,7 @@ public:
                 for (auto addrs : otherAccountsAddrs)
                 {
                     auto relatedAddrs = catchAllRelatedAddrIdx(statisticTable, move(addrs));
-                    allAddrs.insert(addrs.end(),
+                    allAddrs.insert(allAddrs.end(),
                                     make_move_iterator(relatedAddrs.begin()),
                                     make_move_iterator(relatedAddrs.end()));
                 }
@@ -217,26 +209,21 @@ public:
         return allAddrs;
     }
 
-    vector<vector<int>> queryData(vector<pair<string, Dimension>>& statisticTable, int addrIndex)
+    vector<vector<int>> queryData(vector<pair<string, Dimension>>& statisticTable, int addrIndex, vector<vector<int>> lastQueryResult = {})
     {
-        vector<vector<int>> otherAccountsAddrs;
-
         for (auto i = 0; i < statisticTable.size(); ++i)
         {
             auto item = statisticTable[i];
 
             if (item.second[addrIndex] == 1)
             {
-                otherAccountsAddrs.push_back(move(item.second));
-                statisticTable.erase(statisticTable.begin() + i);
-                auto remain = queryData(statisticTable, addrIndex);
-                otherAccountsAddrs.insert(otherAccountsAddrs.end(),
-                                          make_move_iterator(remain.begin()),
-                                          make_move_iterator(remain.end()));
-                return otherAccountsAddrs;
+                lastQueryResult.push_back(move(item.second));
+                statisticTable.back() = statisticTable[i];
+                statisticTable.pop_back();
+                return queryData(statisticTable, addrIndex, lastQueryResult);
             }
         }
 
-        return { };
+        return lastQueryResult;
     }
 };
