@@ -178,6 +178,7 @@ public:
                     // 这样就重复查了，尽管别的 addrs 查过后，将相关的 account 已经删掉了
                     // reply: 我在这里尝试合并 addrs 和各个 i 下的 addrs，结果 LeetCode 上显示却没有这版代码跑得快。内存占用差不多，小一点点。
                     // 我还发现 LeetCode 上注意引用传值，这样可以优化内存
+                    // 慢的原因我想了下，应该是因为（或运算）合并两个数组导致的
                     auto relatedAddrs = catchAllRelatedAddrIdx(statisticTable, move(addrs));
                     allAddrs.insert(allAddrs.end(),
                                     make_move_iterator(relatedAddrs.begin()),
