@@ -37,6 +37,91 @@ public:
         _alloc.deallocate(_data, _rowCount * _colCount);
     }
 };
+
+class Permutation
+{
+private:
+    bool _firstMove = false;
+    vector<int> _options;
+    unsigned _optionIndex;
+    unsigned _selectCount;
+    shared_ptr<Permutation> _subPermutation;
+
+public:
+    static Permutation MakePermutation(unsigned optionsCount, unsigned selectCount)
+    {
+        auto opts = vector<int>();
+        opts.reserve(optionsCount);
+        for (auto i = 0; i < optionsCount; ++i)
+        {
+            opts.push_back(i);
+        }
+
+        auto p = Permutation(move(opts), selectCount);
+        p._firstMove = true;
+        return p;
+    }
+
+    bool moveNext()
+    {
+        if (_options.empty())
+        {
+            return false;
+        }
+
+        if (_firstMove)
+        {
+            _firstMove = false;
+            return true;
+        }
+
+        if (_subPermutation == nullptr)
+        {
+            return false;
+        }
+
+        if (_subPermutation->moveNext())
+        {
+            return true;
+        }
+
+        if ((++_optionIndex) < _options.size())
+        {
+            _subPermutation = shared_ptr<Permutation>(genSubOpt(_options, _optionIndex), _selectCount - 1);
+        }
+    }
+
+    vector<int> current()
+    {
+        if (_subPermutation == nullptr)
+        {
+            return { };
+        }
+        else
+        {
+            auto sub = _subPermutation->current();
+            sub.insert(sub.begin(), _options[_optionIndex]);
+            return sub;
+        }
+    }
+private:
+    Permutation(vector<int> options, unsigned selectCount)
+        : _options(move(options)), _optionIndex(0), _selectCount(selectCount)
+    {
+        if (_options.size() > 1)
+        {
+            _subPermutation = shared_ptr<Permutation>(genSubOpt(_options, 0), selectCount - 1);
+        }
+    }
+
+    vector<int> genSubOpt(vector<int> options, unsigned currentOptIndex)
+    {
+        auto b = options.begin();
+        options.erase(b, b + currentOptIndex + 1);
+        return options;
+    }
+};
+
 class Solution 
 {
 public:
