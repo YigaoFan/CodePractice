@@ -24,13 +24,11 @@ public class Permutation {
 
     private Permutation(ArrayList<Integer> options) {
         m_options = options;
-        for (int i = 0; i < options.size(); ++i) {
-            m_optionIndex = i;
+        m_optionIndex = 0;
 
-            if (options.size() > 1) {
-                m_subPermutation = new Permutation(regenSubOpt(m_optionIndex));
-                return;
-            }
+        if (options.size() > 1) {
+            m_subPermutation = new Permutation(regenSubOpt(m_optionIndex));
+            return;
         }
     }
 
