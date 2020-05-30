@@ -38,6 +38,7 @@ public:
     }
 };
 
+// 类似这个的东西很常用
 class Permutation
 {
 private:
@@ -91,17 +92,13 @@ public:
         }
     }
 
-    vector<int> current()
+    vector<int> current(vector<int> previousPermutation = {})
     {
-        if (_subPermutation == nullptr)
+        previousPermutation.push_back(_options[_optionIndex]);
+
+        if (_subPermutation != nullptr)
         {
-            return { };
-        }
-        else
-        {
-            auto sub = _subPermutation->current();
-            sub.insert(sub.begin(), _options[_optionIndex]);
-            return sub;
+            return _subPermutation->current(move(previousPermutation));
         }
     }
 private:
@@ -110,10 +107,12 @@ private:
     {
         if (_options.size() > 1)
         {
+            // 面对不同的需求，这里 selectCount 要动一动
             _subPermutation = shared_ptr<Permutation>(genSubOpt(_options, 0), selectCount - 1);
         }
     }
 
+    // 面对不同的需求，这里要动一动
     vector<int> genSubOpt(vector<int> options, unsigned currentOptIndex)
     {
         auto b = options.begin();
@@ -128,27 +127,46 @@ public:
     int maxCoins(vector<int>& nums) 
     {
         Matrix<int> matrix(nums.size(), nums.size());
+
         for (unsigned i = 0; i < nums.size(); ++i)
         {
-            matrix.SetAt(i, i, 0);
+            matrix.SetAt(i, i, nums[i]);
         }
 
         for (auto len = 1; len <= nums.size(); ++len)
         {
-            for (auto i = 0; i < nums.size() - len; ++i)
+            auto p = Permutation::MakePermutation(nums.size(), len);
+
+            while (p.moveNext())
             {
-                auto j = i + len - 1;
-                auto value = 0;
-                for (auto k = i; k <= j; ++k)
+                auto selects = p.current();
+                auto coinCount = 0;
+                for (auto firstRemove = 0; firstRemove < selects.size(); ++firstRemove)
                 {
-                    auto total = matrix(i, k) + matrix(k + 1, j) + nums[k];
-                    value = max(value, total);
+                    auto pos = selects[firstRemove];
+
+                    auto middle = nums[pos];
+                    auto left = 1;
+                    if (pos != 0)
+                    {
+                        left = nums[pos - 1];
+                    }
+
+                    int right = 1;
+                    if (pos != nums.size() - 1)
+                    {
+                        right = nums[pos + 1];
+                    }
+
+                    auto current = left * middle * right;
+                    // 这里哪里要 max
+                    current += coinCount + matrix(/*这里要重定下 cache 的 key*/);
+                    coinCount = coinCount > current ? coinCount : current;
+                    // 虽然这里的选择是不连续的，但是大也是包含小的选择的
                 }
 
-                matrix.SetAt(i, j, value);
+                // how to set coinCount into matrix
             }
         }
-
-        return matrix(nums.size() - 1, nums.size() - 1);
     }
 };
