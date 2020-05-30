@@ -12,7 +12,7 @@ public class Permutation {
     private Permutation m_subPermutation;
 
     public static Permutation MakePermutation(int num) {
-        ArrayList options = new ArrayList<Boolean>(num);
+        ArrayList options = new ArrayList<Integer>(num);
         for (int i = 1; i <= num; ++i) {
             options.add(i);
         }
