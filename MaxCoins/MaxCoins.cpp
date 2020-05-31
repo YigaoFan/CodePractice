@@ -89,7 +89,10 @@ public:
         if ((++_optionIndex) < _options.size())
         {
             _subPermutation = shared_ptr<Permutation>(genSubOpt(_options, _optionIndex), _selectCount - 1);
+            return true;
         }
+
+        return false;
     }
 
     vector<int> current(vector<int> previousPermutation = {})
@@ -100,18 +103,21 @@ public:
         {
             return _subPermutation->current(move(previousPermutation));
         }
+
+        return previousPermutation;
     }
-private:
+
     Permutation(vector<int> options, unsigned selectCount)
         : _options(move(options)), _optionIndex(0), _selectCount(selectCount)
     {
-        if (_options.size() > 1)
+        if (selectCount > 0)
         {
             // 面对不同的需求，这里 selectCount 要动一动
-            _subPermutation = shared_ptr<Permutation>(genSubOpt(_options, 0), selectCount - 1);
+            _subPermutation = make_shared<Permutation>(genSubOpt(_options, 0), selectCount - 1);
         }
     }
 
+private:
     // 面对不同的需求，这里要动一动
     vector<int> genSubOpt(vector<int> options, unsigned currentOptIndex)
     {
@@ -126,47 +132,60 @@ class Solution
 public:
     int maxCoins(vector<int>& nums) 
     {
-        Matrix<int> matrix(nums.size(), nums.size());
-
-        for (unsigned i = 0; i < nums.size(); ++i)
+        if (nums.empty())
         {
-            matrix.SetAt(i, i, nums[i]);
+            return 0;
         }
 
-        for (auto len = 1; len <= nums.size(); ++len)
+        map<vector<int>, int> table;
+        for (auto i = 0; i < nums.size(); ++i)
+        {
+            table.insert({ { i, }, nums[i] });
+        }
+
+        vector<int> allIn;
+        for (auto len = 2; len <= nums.size(); ++len)
         {
             auto p = Permutation::MakePermutation(nums.size(), len);
 
             while (p.moveNext())
             {
                 auto selects = p.current();
+                if (len == nums.size())
+                {
+                    allIn = selects;
+                }
+
                 auto coinCount = 0;
                 for (auto firstRemove = 0; firstRemove < selects.size(); ++firstRemove)
                 {
                     auto pos = selects[firstRemove];
-
                     auto middle = nums[pos];
+
                     auto left = 1;
-                    if (pos != 0)
+                    if (firstRemove != 0)
                     {
-                        left = nums[pos - 1];
+                        left = nums[selects[firstRemove]];
                     }
 
-                    int right = 1;
-                    if (pos != nums.size() - 1)
+                    auto right = 1;
+                    if (firstRemove != selects.size() - 1)
                     {
-                        right = nums[pos + 1];
+                        right = nums[selects[firstRemove + 1]];
                     }
 
                     auto current = left * middle * right;
-                    // 这里哪里要 max
-                    current += coinCount + matrix(/*这里要重定下 cache 的 key*/);
+                    auto removePos = selects.begin() + firstRemove;
+                    selects.erase(removePos);
+                    current += coinCount + table[selects];
+                    selects.insert(removePos, pos);
                     coinCount = coinCount > current ? coinCount : current;
-                    // 虽然这里的选择是不连续的，但是大也是包含小的选择的
                 }
 
-                // how to set coinCount into matrix
+                table.insert({ move(selects), coinCount});
             }
         }
+
+        return table[allIn];
     }
 };
