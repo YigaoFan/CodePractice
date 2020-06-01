@@ -39,17 +39,17 @@ public:
 };
 
 // 类似这个的东西很常用
-class Permutation
+class Combination
 {
 private:
     bool _firstMove = false;
     vector<int> _options;
     unsigned _optionIndex;
     unsigned _selectCount;
-    shared_ptr<Permutation> _subPermutation;
+    shared_ptr<Combination> _subCombination;
 
 public:
-    static Permutation MakePermutation(unsigned optionsCount, unsigned selectCount)
+    static Combination MakeCombination(unsigned optionsCount, unsigned selectCount)
     {
         auto opts = vector<int>();
         opts.reserve(optionsCount);
@@ -58,9 +58,14 @@ public:
             opts.push_back(i);
         }
 
-        auto p = Permutation(move(opts), selectCount);
-        p._firstMove = true;
-        return p;
+        auto c = Combination(move(opts), selectCount);
+        c._firstMove = true;
+        return c;
+    }
+
+    void setSelectCount(unsigned selectCount)
+    {
+
     }
 
     bool moveNext()
@@ -76,44 +81,43 @@ public:
             return true;
         }
 
-        if (_subPermutation == nullptr)
-        {
-            return false;
-        }
-
-        if (_subPermutation->moveNext())
+        if (_subCombination != nullptr && _subCombination->moveNext())
         {
             return true;
         }
 
-        if ((++_optionIndex) < _options.size())
+        if (((++_optionIndex) + _selectCount) <= _options.size())
         {
-            _subPermutation = shared_ptr<Permutation>(genSubOpt(_options, _optionIndex), _selectCount - 1);
+            if (_subCombination != nullptr)
+            {
+                _subCombination = make_shared<Combination>(genSubOpt(_options, _optionIndex), _selectCount - 1);
+            }
+            
             return true;
         }
 
         return false;
     }
 
-    vector<int> current(vector<int> previousPermutation = {})
+    vector<int> current(vector<int> previousCombination = {})
     {
-        previousPermutation.push_back(_options[_optionIndex]);
+        previousCombination.push_back(_options[_optionIndex]);
 
-        if (_subPermutation != nullptr)
+        if (_subCombination != nullptr)
         {
-            return _subPermutation->current(move(previousPermutation));
+            return _subCombination->current(move(previousCombination));
         }
 
-        return previousPermutation;
+        return previousCombination;
     }
 
-    Permutation(vector<int> options, unsigned selectCount)
+    Combination(vector<int> options, unsigned selectCount)
         : _options(move(options)), _optionIndex(0), _selectCount(selectCount)
     {
-        if (selectCount > 0)
+        if (auto subSelectCount = selectCount - 1; subSelectCount > 0)
         {
             // 面对不同的需求，这里 selectCount 要动一动
-            _subPermutation = make_shared<Permutation>(genSubOpt(_options, 0), selectCount - 1);
+            _subCombination = make_shared<Combination>(genSubOpt(_options, 0), subSelectCount);
         }
     }
 
@@ -144,18 +148,24 @@ public:
         }
 
         vector<int> allIn;
+        allIn.reserve(nums.size());
+        for (auto i = 0; i < nums.size(); ++i)
+        {
+            allIn.push_back(i);
+        }
+
         for (auto len = 2; len <= nums.size(); ++len)
         {
-            auto p = Permutation::MakePermutation(nums.size(), len);
+            auto c = Combination::MakeCombination(nums.size(), len);
 
-            while (p.moveNext())
+            while (c.moveNext())
             {
-                auto selects = p.current();
+                auto selects = c.current();
                 if (len == nums.size())
                 {
                     allIn = selects;
                 }
-
+                
                 auto coinCount = 0;
                 for (auto firstRemove = 0; firstRemove < selects.size(); ++firstRemove)
                 {
@@ -165,11 +175,11 @@ public:
                     auto left = 1;
                     if (firstRemove != 0)
                     {
-                        left = nums[selects[firstRemove]];
+                        left = nums[selects[firstRemove - 1]];
                     }
 
                     auto right = 1;
-                    if (firstRemove != selects.size() - 1)
+                    if (firstRemove != (selects.size() - 1))
                     {
                         right = nums[selects[firstRemove + 1]];
                     }
@@ -177,7 +187,7 @@ public:
                     auto current = left * middle * right;
                     auto removePos = selects.begin() + firstRemove;
                     selects.erase(removePos);
-                    current += coinCount + table[selects];
+                    current += table[selects];
                     selects.insert(removePos, pos);
                     coinCount = coinCount > current ? coinCount : current;
                 }
