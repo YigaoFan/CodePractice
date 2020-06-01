@@ -62,7 +62,7 @@ public:
         return Combination(move(opts));
     }
 
-    void changeSelectCount(unsigned selectCount)
+    void setSelectCount(unsigned selectCount)
     {
         _firstMove = true;
         _selectCount = selectCount;
@@ -144,30 +144,20 @@ public:
         }
 
         map<vector<int>, int> table;
-        for (auto i = 0; i < nums.size(); ++i)
+        for (auto n : nums)
         {
-            table.insert({ { i, }, nums[i] });
-        }
-
-        vector<int> allIn;
-        allIn.reserve(nums.size());
-        for (auto i = 0; i < nums.size(); ++i)
-        {
-            allIn.push_back(i);
+            table.insert({ { n, }, n });
         }
 
         auto c = Combination::MakeCombination(nums.size());
         for (auto len = 2; len <= nums.size(); ++len)
         {
-            c.changeSelectCount(len);
+            c.setSelectCount(len);
             while (c.moveNext())
             {
                 auto selects = c.current();
-                if (len == nums.size())
-                {
-                    allIn = selects;
-                }
-                
+                auto items = collectItemByIndices(selects, nums);
+
                 auto coinCount = 0;
                 for (auto firstRemove = 0; firstRemove < selects.size(); ++firstRemove)
                 {
@@ -188,16 +178,32 @@ public:
 
                     auto current = left * middle * right;
                     auto removePos = selects.begin() + firstRemove;
+                    auto itemRemovePos = items.begin() + firstRemove;
                     selects.erase(removePos);
-                    current += table[selects];
+                    items.erase(itemRemovePos);
+                    current += table[items];
                     selects.insert(removePos, pos);
+                    items.insert(itemRemovePos, middle);
                     coinCount = coinCount > current ? coinCount : current;
                 }
 
-                table.insert({ move(selects), coinCount});
+                table.insert({ move(items), coinCount});
             }
         }
 
-        return table[allIn];
+        return table[nums];
+    }
+
+    vector<int> collectItemByIndices(vector<int> const& indices, vector<int> const& nums) const
+    {
+        vector<int> items;
+        items.reserve(indices.size());
+
+        for (auto i : indices)
+        {
+            items.push_back(nums[i]);
+        }
+
+        return items;
     }
 };
