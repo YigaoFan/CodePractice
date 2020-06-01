@@ -159,32 +159,39 @@ public:
                 auto items = collectItemByIndices(selects, nums);
 
                 auto coinCount = 0;
-                for (auto firstRemove = 0; firstRemove < selects.size(); ++firstRemove)
+                if (table.find(items) != table.end())
                 {
-                    auto pos = selects[firstRemove];
-                    auto middle = nums[pos];
-
-                    auto left = 1;
-                    if (firstRemove != 0)
+                    coinCount = table[items];
+                }
+                else
+                {
+                    for (auto firstRemove = 0; firstRemove < selects.size(); ++firstRemove)
                     {
-                        left = nums[selects[firstRemove - 1]];
-                    }
+                        auto pos = selects[firstRemove];
+                        auto middle = nums[pos];
 
-                    auto right = 1;
-                    if (firstRemove != (selects.size() - 1))
-                    {
-                        right = nums[selects[firstRemove + 1]];
-                    }
+                        auto left = 1;
+                        if (firstRemove != 0)
+                        {
+                            left = nums[selects[firstRemove - 1]];
+                        }
 
-                    auto current = left * middle * right;
-                    auto removePos = selects.begin() + firstRemove;
-                    auto itemRemovePos = items.begin() + firstRemove;
-                    selects.erase(removePos);
-                    items.erase(itemRemovePos);
-                    current += table[items];
-                    selects.insert(removePos, pos);
-                    items.insert(itemRemovePos, middle);
-                    coinCount = coinCount > current ? coinCount : current;
+                        auto right = 1;
+                        if (firstRemove != (selects.size() - 1))
+                        {
+                            right = nums[selects[firstRemove + 1]];
+                        }
+
+                        auto current = left * middle * right;
+                        auto removePos = selects.begin() + firstRemove;
+                        auto itemRemovePos = items.begin() + firstRemove;
+                        selects.erase(removePos);
+                        items.erase(itemRemovePos);
+                        current += table[items];
+                        selects.insert(removePos, pos);
+                        items.insert(itemRemovePos, middle);
+                        coinCount = coinCount > current ? coinCount : current;
+                    }
                 }
 
                 table.insert({ move(items), coinCount});
