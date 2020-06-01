@@ -1,4 +1,5 @@
 // https://leetcode-cn.com/problems/burst-balloons/
+// Matrix 没用到
 template <typename T>
 class Matrix
 {
@@ -43,34 +44,35 @@ class Combination
 {
 private:
     bool _firstMove = false;
-    vector<int> _options;
+    shared_ptr<vector<int>> _options;
     unsigned _optionIndex;
     unsigned _selectCount;
     shared_ptr<Combination> _subCombination;
 
 public:
-    static Combination MakeCombination(unsigned optionsCount, unsigned selectCount)
+    static Combination MakeCombination(unsigned optionsCount)
     {
-        auto opts = vector<int>();
-        opts.reserve(optionsCount);
+        auto opts = make_shared<vector<int>>();
+        opts->reserve(optionsCount);
         for (auto i = 0; i < optionsCount; ++i)
         {
-            opts.push_back(i);
+            opts->push_back(i);
         }
 
-        auto c = Combination(move(opts), selectCount);
-        c._firstMove = true;
-        return c;
+        return Combination(move(opts));
     }
 
-    void setSelectCount(unsigned selectCount)
+    void changeSelectCount(unsigned selectCount)
     {
-
+        _firstMove = true;
+        _selectCount = selectCount;
+        _optionIndex = 0;
+        setupSub();
     }
 
     bool moveNext()
     {
-        if (_options.empty())
+        if (_options->empty())
         {
             return false;
         }
@@ -86,11 +88,11 @@ public:
             return true;
         }
 
-        if (((++_optionIndex) + _selectCount) <= _options.size())
+        if (((++_optionIndex) + _selectCount) <= _options->size())
         {
             if (_subCombination != nullptr)
             {
-                _subCombination = make_shared<Combination>(genSubOpt(_options, _optionIndex), _selectCount - 1);
+                _subCombination = make_shared<Combination>(_options, _selectCount - 1, _optionIndex + 1);
             }
             
             return true;
@@ -101,7 +103,7 @@ public:
 
     vector<int> current(vector<int> previousCombination = {})
     {
-        previousCombination.push_back(_options[_optionIndex]);
+        previousCombination.push_back((*_options)[_optionIndex]);
 
         if (_subCombination != nullptr)
         {
@@ -111,23 +113,23 @@ public:
         return previousCombination;
     }
 
-    Combination(vector<int> options, unsigned selectCount)
-        : _options(move(options)), _optionIndex(0), _selectCount(selectCount)
+    Combination(shared_ptr<vector<int>> options) : _options(options)
+    { }
+
+    Combination(shared_ptr<vector<int>> options, unsigned selectCount, unsigned startIndex)
+        : _options(options), _selectCount(selectCount), _optionIndex(startIndex)
     {
-        if (auto subSelectCount = selectCount - 1; subSelectCount > 0)
-        {
-            // 面对不同的需求，这里 selectCount 要动一动
-            _subCombination = make_shared<Combination>(genSubOpt(_options, 0), subSelectCount);
-        }
+        setupSub();
     }
 
 private:
-    // 面对不同的需求，这里要动一动
-    vector<int> genSubOpt(vector<int> options, unsigned currentOptIndex)
+    void setupSub()
     {
-        auto b = options.begin();
-        options.erase(b, b + currentOptIndex + 1);
-        return options;
+        if (auto subSelectCount = _selectCount - 1; subSelectCount > 0)
+        {
+            // 面对不同的需求，这里 selectCount 要动一动
+            _subCombination = make_shared<Combination>(_options, subSelectCount, _optionIndex + 1);
+        }
     }
 };
 
@@ -154,10 +156,10 @@ public:
             allIn.push_back(i);
         }
 
+        auto c = Combination::MakeCombination(nums.size());
         for (auto len = 2; len <= nums.size(); ++len)
         {
-            auto c = Combination::MakeCombination(nums.size(), len);
-
+            c.changeSelectCount(len);
             while (c.moveNext())
             {
                 auto selects = c.current();
