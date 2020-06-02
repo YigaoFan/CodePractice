@@ -149,6 +149,7 @@ public:
             table.insert({ { n, }, n });
         }
 
+        // 这个 c 的所有枚举个数加起来有 2^n
         auto c = Combination::MakeCombination(nums.size());
         for (auto len = 2; len <= nums.size(); ++len)
         {
