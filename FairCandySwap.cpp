@@ -1,3 +1,4 @@
+// https://leetcode-cn.com/problems/fair-candy-swap/comments/
 class Enumerator
 {
 private:
@@ -33,6 +34,8 @@ public:
 class Solution
 {
 public:
+    // 看了下评论，发觉可以用将 A 和 B 的内容分别放到 set、查找 set 的思路来做
+    // 那样应该快一些
     vector<int> fairCandySwap(vector<int>& A, vector<int>& B)
     {
         sort(A.begin(), A.end());
