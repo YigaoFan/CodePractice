@@ -4,6 +4,8 @@ class Solution
 public:
     int numDecodings(string s)
     {
+        assert(!s.empty());
+
         // 题目中没有说明下面这个，是通过提交测试出来的
         if (s[0] == '0')
         {

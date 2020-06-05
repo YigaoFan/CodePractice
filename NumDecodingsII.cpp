@@ -7,10 +7,13 @@ private:
         One,
         Two,
     };
+    using WaysType = long;
 
 public:
     int numDecodings(string s)
     {
+        assert(!s.empty());
+
         // 题目中没有说明下面这个，是通过提交测试出来的
         if (s[0] == '0')
         {
@@ -28,22 +31,22 @@ public:
             waysTable.push_back(1);
         }
 
+        int m = pow(10, 9) + 7;
         for (auto i = 2; i <= s.size(); ++i)
         {
-            auto ways = 0;
+            WaysType ways = 0;
 
             auto r1 = detectOneBitConvert(s, i);
-            ways += (waysTable[i - 1] * r1);
+            ways += promotedMul(waysTable[i - 1], r1);
 
             auto r2 = detectTwoBitConvert(s, i);
-            ways += (waysTable[i - 2] * r2);
+            ways += promotedMul(waysTable[i - 2], r2);
 
-            // TODO 处理溢出有问题
-            ways = ways % static_cast<int>(pow(10, 9) + 7); // 这里的 double -> int 类型转换不知道会不会出问题
-            waysTable.push_back(ways);
+            waysTable.push_back(static_cast<int>(ways % m));
         }
 
-        return waysTable[s.size()];
+        auto r = waysTable[s.size()];
+        return r;
     }
 
     int detectTwoBitConvert(string const &s, int i)
@@ -89,7 +92,7 @@ public:
             }
             else
             {
-                return 6; //  second >= '1' && second <= '6'
+                return 6; // second >= '1' && second <= '6'
             }
         }
     }
@@ -106,5 +109,10 @@ public:
         }
 
         return 0;
+    }
+
+    static WaysType promotedMul(WaysType n1, WaysType n2)
+    {
+        return n1 * n2;
     }
 };
