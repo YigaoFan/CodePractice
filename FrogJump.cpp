@@ -19,12 +19,14 @@ public:
         _paths.push_back({ 0, 0 });
     }
 
-    PathState loopMoveNext()
+    PathState moveNext()
     {
-        for (auto i = 0; i < _paths.size(); ++i)
+        vector<pair<unsigned, size_t>> nextGenerationPaths;
+
+        for (auto& p : _paths)
         {
-            auto step = _paths[i].first;
-            auto posIndex = _paths[i].second;
+            auto step = p.first;
+            auto posIndex = p.second;
 
             vector<unsigned> stepChoices;
             stepChoices.reserve(1);
@@ -55,8 +57,7 @@ public:
                         }
                         else
                         {
-                            // replace with new next path
-                            _paths.push_back({ s, j });
+                            nextGenerationPaths.push_back({ s, j });
                         }
                     }
                     else if (nextPoint < p)
@@ -65,13 +66,9 @@ public:
                     }
                 }
             }
-            
-            // remove this old path
-            _paths[i] = _paths.back(); // if these are same position, will go wrong?
-            _paths.pop_back();
-            --i;
         }
 
+        _paths = move(nextGenerationPaths);
         return _paths.empty() ? PathState::NoWayToGo : PathState::Continue;
     }
 };
@@ -86,7 +83,7 @@ public:
 
         do
         {
-            s = p.loopMoveNext();
+            s = p.moveNext();
         } while (s == PathState::Continue);
 
         return s == PathState::ReachDest;
