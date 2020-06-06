@@ -67,7 +67,7 @@ public:
             }
             
             // remove this old path
-            _paths[i] = _paths.back(); // if these are some position, will go wrong?
+            _paths[i] = _paths.back(); // if these are same position, will go wrong?
             _paths.pop_back();
             --i;
         }
