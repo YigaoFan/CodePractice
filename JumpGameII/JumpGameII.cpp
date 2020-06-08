@@ -37,12 +37,17 @@ public:
         auto posIndex = fastestPath.second;
         auto maxStep = _stones[posIndex];
 
-        for (auto s = 1; s <= maxStep; ++s)
+        for (auto s = 1, pushCount = 0; s <= maxStep; ++s)
         {
             auto nextPoint = posIndex + s;
             if (nextPoint == (_stones.size() - 1))
             {
                 _history.insert(fastestPath);
+                for (; pushCount > 0; --pushCount)
+                {
+                    _todoPaths.pop_back();
+                }
+
                 return { PathState::ReachDest, stepCount + 1 };
                 // 这里 return 会丢掉其他的 s，但对这题没有影响，因为其他的 s 的步数肯定比这个多
                 // 而且这里应该把同一个循环里 push_back 的 newPos 给吐出来
@@ -51,6 +56,7 @@ public:
             {
                 if (auto newPos = pair<int, size_t>(stepCount + 1, nextPoint); _history.find(newPos) == _history.end())
                 {
+                    ++pushCount;
                     _todoPaths.push_back(newPos);
                 }
             }
