@@ -22,7 +22,7 @@ public:
 
     PathState moveNext()
     {
-        // 选择离终点最近最快的那个先开始
+        // 选择离终点最近的那个先开始
         auto fastestPath = _todoPaths.back();
         _todoPaths.pop_back();
         auto step = fastestPath.first;
