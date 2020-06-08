@@ -11,6 +11,7 @@ class PathMover
 private:
     vector<int> const& _stones;
     // pair: last step size, current stone index
+    set<pair<unsigned, size_t>> _history;
     vector<pair<unsigned, size_t>> _paths;
 public:
     PathMover(vector<int> const &stones)
@@ -33,6 +34,14 @@ public:
             if (step == 0)
             {
                 stepChoices.push_back(1);
+            }
+            else if (step == 1)
+            {
+                stepChoices = vector<unsigned>
+                {
+                    step,
+                    step + 1,
+                };
             }
             else
             {
@@ -57,7 +66,11 @@ public:
                         }
                         else
                         {
-                            nextGenerationPaths.push_back({ s, j });
+                            // 选择离终点最近最快的那个先开始
+                            if (auto p = pair<unsigned, size_t>(s, j); _history.find(p) == _history.end())
+                            {
+                                nextGenerationPaths.push_back(p);
+                            }
                         }
                     }
                     else if (nextPoint < p)
@@ -68,6 +81,7 @@ public:
             }
         }
 
+        _history.insert(_paths.begin(), _paths.end());
         _paths = move(nextGenerationPaths);
         return _paths.empty() ? PathState::NoWayToGo : PathState::Continue;
     }
