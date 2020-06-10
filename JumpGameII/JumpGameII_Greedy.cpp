@@ -12,7 +12,7 @@ public:
         }
 
         int currentPos = 0;
-        int nextPos = nums[0];
+        int nextPos = 0;
         int step = 0;
         for (auto i = 0; i < nums.size(); ++i)
         {
