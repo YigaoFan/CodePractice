@@ -22,6 +22,9 @@ public:
         }
 
         n += countBoomerangsIn(sqrDisCounter);
+        // 有一种 LeetCode 过了的写法是把 map 和上面这句移进 for 循环内，把 j = 0;
+        // 这种写法比我的这种写法效率高很多吗？
+        // 最后一个那个没过的测试用例显示不出来，我自己也测试不了。
         return n;
     }
 
