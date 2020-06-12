@@ -72,11 +72,6 @@ public:
 
     bool moveNext()
     {
-        if (_options->empty())
-        {
-            return false;
-        }
-
         if (_firstMove)
         {
             _firstMove = false;
