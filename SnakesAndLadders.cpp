@@ -6,6 +6,7 @@ private:
     shared_ptr<vector<bool>> _visitedMark;
     int _i;
     int _step;
+    bool _lastJumped;
 public:
     static Position MakePosition(vector<vector<int>> const& board, int start)
     {
@@ -28,11 +29,11 @@ public:
         }
 
         auto visitedMark = make_shared<vector<bool>>(posNum, false);
-        return Position(flatBoard, visitedMark, start, 0);
+        return Position(flatBoard, visitedMark, start, 0, false);
     }
 
-    Position(shared_ptr<vector<int>> flatBoard, shared_ptr<vector<bool>> visitedMark, int i, int step)
-        : _board(flatBoard), _visitedMark(visitedMark), _i(i), _step(step)
+    Position(shared_ptr<vector<int>> flatBoard, shared_ptr<vector<bool>> visitedMark, int i, int step, bool lastJumped)
+        : _board(flatBoard), _visitedMark(visitedMark), _i(i), _step(step), _lastJumped(lastJumped)
     { 
         (*_visitedMark)[_i] = true;
     }
@@ -40,6 +41,7 @@ public:
     vector<Position> nextNewPoses()
     {
         vector<int> nextIndexs;
+        vector<int> jumpIndexs;
 
         auto max = _i + 6;
         int rightBound = max < _board->size() ? max : _board->size() - 1;
@@ -48,7 +50,7 @@ public:
         {
             if (auto nextV = (*_board)[i]; nextV != -1)
             {
-                nextIndexs.push_back(nextV - 1);
+                jumpIndexs.push_back(nextV - 1);
             }
             else
             {
@@ -56,9 +58,13 @@ public:
             }
         }
 
-        if (auto v = (*_board)[_i]; v != -1)
+        // 题目中没有提“上一步（靠蛇或者梯子）跳了，下一步就不能直接通过所在的位置跳”，只说了“一步移动中只能跳一次”。
+        // 我是提交的测试过不了的时候，想不通，本地调试结果觉得没有问题，只是有一点特殊，两步都是跳。
+        // 看评论区，才知道这是题目中未描述清楚的地方。
+        // 所以在下面这行进行了这样的控制。
+        if (auto v = (*_board)[_i]; !_lastJumped && v != -1)
         {
-            nextIndexs.push_back(v - 1);
+            jumpIndexs.push_back(v - 1);
         }
 
         vector<Position> nextPoses;
@@ -66,9 +72,18 @@ public:
         {
             if (!(*_visitedMark)[i])
             {
-                nextPoses.push_back({ _board, _visitedMark, i, _step + 1 });
+                nextPoses.push_back({ _board, _visitedMark, i, _step + 1, false });
             }
         }
+
+        for (auto i : jumpIndexs)
+        {
+            if (!(*_visitedMark)[i])
+            {
+                nextPoses.push_back({ _board, _visitedMark, i, _step + 1, true });
+            }
+        }
+
 
         return nextPoses;
     }
