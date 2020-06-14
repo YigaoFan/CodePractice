@@ -1,6 +1,9 @@
 // https://leetcode-cn.com/problems/jump-game-ii/
 // 题目里说：你总是可以到达数组的最后一个位置，意思是你无论走到哪个位置最终都能到终点。
 // 思路很棒，来自：https://leetcode-cn.com/problems/jump-game-ii/comments/6248
+// 关于贪心为什么可以：
+// 每次走最大的，你每次选择的范围就大，每次选择的范围都最大，那最后算出来的答案就是最少的步数。
+// 来自：https://leetcode-cn.com/problems/jump-game-ii/solution/xiang-xi-tong-su-de-si-lu-fen-xi-duo-jie-fa-by-10/380574
 class Solution
 {
 public:
