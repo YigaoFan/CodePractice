@@ -18,17 +18,17 @@ public:
 
         // parting
         auto topPoints = statisticsTopIndexs(height);
-        auto water = 0;
         // compute each part
+        auto water = 0;
         for (auto i = 0; i < topPoints.size() - 1; ++i)
         {
             auto left = topPoints[i];
             auto right = topPoints[i + 1];
             auto level = min(height[left], height[right]);
-            for (auto k = left; k <= right; ++k)
+            for (auto k = left + 1; k < right; ++k)
             {
                 auto h = height[k];
-                if (auto w = level - h; water > 0)
+                if (auto w = level - h; w > 0)
                 {
                     water += w;
                 }
@@ -61,7 +61,6 @@ public:
         trends.push_back(Trend::Fall); // 最后一个的这个状态设置得对不对？暂时还不知道
 
         vector<pair<int, int>> topPoints;
-        // 下面这些要不要处理 Unchange 的事情
         if (trends[0] == Trend::Fall)
         {
             topPoints.push_back({ heights[0], 0 });
@@ -72,7 +71,9 @@ public:
             auto last = trends[i - 1];
             auto current = trends[i];
 
-            if (last == Trend::Rise && current == Trend::Fall)
+            if ((last == Trend::Rise && current == Trend::Fall)
+                || (last == Trend::Rise && current == Trend::Unchange)
+                || (last == Trend::Unchange && current == Trend::Fall))
             {
                 topPoints.push_back({ heights[i], i });
             }
