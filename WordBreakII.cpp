@@ -54,6 +54,13 @@ class Solution
 public:
     vector<string> wordBreak(string s, vector<string>& wordDict)
     {
+        auto chars = statisticAppearedChar(s);
+        auto dicChars = statisticAppearedChar(wordDict);
+        if (chars.size() > dicChars.size())
+        {
+            return { };
+        }
+
         Matrix<int> matrix(s.size(), wordDict.size());
         
         for (auto j = 0; j < wordDict.size(); ++j)
@@ -66,15 +73,11 @@ public:
                 {
                     if (auto p = s.find(w, i); p != string::npos)
                     {
-                        if (i == p)
-                        {
-                            matrix.SetAt(p, j, w.size());
-                        }
-                        else
+                        if (i != p)
                         {
                             matrix.SetAt(i, j, 0);
-                            matrix.SetAt(p, j, w.size());
                         }
+                        matrix.SetAt(p, j, w.size());
 
                         foundPos = p;
                     }
@@ -154,5 +157,27 @@ public:
         }
 
         return words;
+    }
+
+    static set<char> statisticAppearedChar(string const& s)
+    {
+        set<char> appearedChar;
+        for (auto c : s)
+        {
+            appearedChar.insert(c);
+        }
+
+        return appearedChar;
+    }
+
+    static set<char> statisticAppearedChar(vector<string> const& v)
+    {
+        set<char> appearedChar;
+        for (auto& s : v)
+        {
+            appearedChar.merge(statisticAppearedChar(s));
+        }
+
+        return appearedChar;
     }
 };
