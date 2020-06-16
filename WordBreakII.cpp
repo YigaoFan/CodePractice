@@ -55,7 +55,7 @@ public:
     vector<string> wordBreak(string s, vector<string>& wordDict)
     {
         Matrix<int> matrix(s.size(), wordDict.size());
-
+        
         for (auto j = 0; j < wordDict.size(); ++j)
         {
             auto& w = wordDict[j];
@@ -66,11 +66,21 @@ public:
                 {
                     if (auto p = s.find(w, i); p != string::npos)
                     {
-                        matrix.SetAt(p, j, s.size());
+                        if (i == p)
+                        {
+                            matrix.SetAt(p, j, w.size());
+                        }
+                        else
+                        {
+                            matrix.SetAt(i, j, 0);
+                            matrix.SetAt(p, j, w.size());
+                        }
+
                         foundPos = p;
                     }
                     else
                     {
+                        matrix.SetAt(i, j, 0);
                         foundPos = s.size();
                     }
                 }
@@ -87,17 +97,24 @@ public:
         for (int i = s.size() - 1; i >= 0; --i)
         {
             auto words = queryWordStartFrom(i, matrix);
-
             vector<string> optionContent;
+            
             for (auto& p : words)
             {
                 auto idx = p.first;
                 auto remainIndex = i + p.second;
                 if (optionsContent[remainIndex].size() > 0)
                 {
-                    for (auto& s : optionsContent[remainIndex])
+                    for (auto& c : optionsContent[remainIndex])
                     {
-                        optionContent.push_back(wordDict[idx] + " " + s);
+                        if (c.empty())
+                        {
+                            optionContent.push_back(wordDict[idx]);
+                        }
+                        else
+                        {
+                            optionContent.push_back(wordDict[idx] + " " + c);
+                        }
                     }
                 }
             }
@@ -105,7 +122,23 @@ public:
             optionsContent[i] = move(optionContent);
         }
 
-        return optionsContent[0];
+        auto& b = optionsContent[0];
+        // 按字符串从末尾开始比较排下结果的顺序
+        sort(b.begin(), b.end(), [](auto& s1, auto& s2)
+        {
+            for (auto it1 = s1.rbegin(), it2 = s2.rbegin(); it1 != s1.rend() && it2 != s2.rend(); ++it1, ++it2)
+            {
+                auto c1 = *it1;
+                auto c2 = *it2;
+                if (c1 != c2)
+                {
+                    return c1 < c2;
+                }
+            }
+
+            return s1.size() < s2.size();
+        });
+        return b;
     }
 
     // pair: word index in WordDict, word len
