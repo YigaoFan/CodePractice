@@ -126,7 +126,8 @@ public:
         }
 
         auto& b = optionsContent[0];
-        // 按字符串从末尾开始比较排下结果的顺序
+        // 因为 LeetCode 对结果的顺序也要求，所以按字符串从末尾开始比较排下结果的顺序
+        // 可能也有在组成这个 vector 过程中控制顺序的方法
         sort(b.begin(), b.end(), [](auto& s1, auto& s2)
         {
             for (auto it1 = s1.rbegin(), it2 = s2.rbegin(); it1 != s1.rend() && it2 != s2.rend(); ++it1, ++it2)
