@@ -22,6 +22,7 @@ public:
 
     void SetAt(unsigned rowIndex, unsigned colIndex, T value)
     {
+        // bug: 如果一个地方已经被 set 过了，这里又被 set，前一个 set 的值就没有被析构
         auto addr = _data + (rowIndex * _colCount + colIndex);
         _alloc.construct(addr, move(value));
         _constructedAddrs.push_back(addr);
@@ -53,26 +54,72 @@ class Solution
 public:
     vector<string> wordBreak(string s, vector<string>& wordDict)
     {
-        Matrix<bool> matrix(s.size(), wordDict.size());
+        Matrix<int> matrix(s.size(), wordDict.size());
 
         for (auto j = 0; j < wordDict.size(); ++j)
         {
             auto& w = wordDict[j];
 
-            for (auto i = 0; i < s.size();) // set other position as false
+            for (auto i = 0, foundPos = -1; i < s.size(); ++i)
             {
-                auto p = s.find(w, i);
-                if (p != string::npos)
+                if (i > foundPos)
                 {
-                    matrix.SetAt(p, j, true);
-                    i = p + 1;
+                    if (auto p = s.find(w, i); p != string::npos)
+                    {
+                        matrix.SetAt(p, j, s.size());
+                        foundPos = p;
+                    }
+                    else
+                    {
+                        foundPos = s.size();
+                    }
                 }
-                else
+                else if (i < foundPos)
                 {
-                    break;
+                    matrix.SetAt(i, j, 0);
                 }
             }
         }
-        // 动态规划，背包问题？
+
+        vector<vector<string>> optionsContent(s.size() + 1, vector<string>());
+        optionsContent[s.size()].push_back("");
+
+        for (int i = s.size() - 1; i >= 0; --i)
+        {
+            auto words = queryWordStartFrom(i, matrix);
+
+            vector<string> optionContent;
+            for (auto& p : words)
+            {
+                auto idx = p.first;
+                auto remainIndex = i + p.second;
+                if (optionsContent[remainIndex].size() > 0)
+                {
+                    for (auto& s : optionsContent[remainIndex])
+                    {
+                        optionContent.push_back(wordDict[idx] + " " + s);
+                    }
+                }
+            }
+            
+            optionsContent[i] = move(optionContent);
+        }
+
+        return optionsContent[0];
+    }
+
+    // pair: word index in WordDict, word len
+    static vector<pair<int, int>> queryWordStartFrom(int i, Matrix<int>& wordMatrix)
+    {
+        vector<pair<int, int>> words;
+        for (auto j = 0; j < wordMatrix.colSize(); ++j)
+        {
+            if (auto len = wordMatrix(i, j); len != 0)
+            {
+                words.push_back({ j, len });
+            }
+        }
+
+        return words;
     }
 };
