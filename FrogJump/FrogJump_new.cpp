@@ -29,27 +29,25 @@ public:
         auto posIndex = fastestPath.second;
 
         vector<unsigned> stepChoices;
-        stepChoices.reserve(1);
-        if (step == 0)
+        switch (step)
         {
-            stepChoices.push_back(1);
-        }
-        else if (step == 1)
-        {
-            stepChoices = vector<unsigned>
-            {
-                step,
-                step + 1,
-            };
-        }
-        else
-        {
-            stepChoices = vector<unsigned>
-            {
-                step - 1,
-                step,
-                step + 1,
-            };
+            case 0:
+                stepChoices.push_back(1);
+                break;
+            case 1:
+                stepChoices = vector<unsigned>
+                {
+                    step,
+                    step + 1,
+                };
+                break;
+            default:
+                stepChoices = vector<unsigned>
+                {
+                    step - 1,
+                    step,
+                    step + 1,
+                };
         }
 
         for (auto s : stepChoices)
